@@ -1,0 +1,38 @@
+version: 2.1
+
+# Single per-repo customization file. It plays two roles at once:
+#
+#   1. Parameter source. The `parameters` block below declares this repo's
+#      pipeline parameters and their values. The central setup job reads the
+#      defaults from this file and injects them into the shared workflow.
+#
+#   2. Override orb. This file is also a URL orb (a jobs-only definition). The
+#      central config references it with `override-with: override-orb/second-job`,
+#      so defining `second-job` here replaces the central default. Omit it to use
+#      the central default instead.
+#
+# Because CircleCI fetches this file for the override via the org URL-orb
+# allow-list (which supports GitHub App auth) and the central setup job reads it
+# from an authenticated checkout, nothing here depends on the repo being public.
+
+parameters:
+  # Passed into the (non-overridable) shared URL orb job.
+  test:
+    type: string
+    default: "pass me"
+  # Passed into the overridable second-job (base or override, whichever runs).
+  second_message:
+    type: string
+    default: "second value from the working repo"
+
+jobs:
+  second-job:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    parameters:
+      job_param_2:
+        type: string
+        default: "override default"
+    steps:
+      - run: 'echo "OVERRIDE (working repo) second-job: << parameters.job_param_2 >>"'
