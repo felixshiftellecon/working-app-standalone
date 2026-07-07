@@ -1,0 +1,7 @@
+# Pipeline parameter values for this working repo.
+#
+# The central setup config checks out this repo, reads this file, and injects
+# these values into the shared workflow defined in the central config repo.
+# This is where this repo determines its own pipeline parameters.
+parameters:
+  test: "pass me"
