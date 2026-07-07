@@ -1,0 +1,17 @@
+version: 2.1
+
+# Working-repo override orb. This is a URL orb: a jobs-only YAML file (no `orbs:`
+# or `workflows:` sections). The central config references it via
+# `override-with: override-orb/second-job`, so defining `second-job` here
+# replaces the central default whenever this file is imported.
+jobs:
+  second-job:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    parameters:
+      job_param_2:
+        type: string
+        default: "override default"
+    steps:
+      - run: echo "OVERRIDE (working repo) second-job: << parameters.job_param_2 >>"

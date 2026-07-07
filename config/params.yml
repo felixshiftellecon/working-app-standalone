@@ -4,4 +4,7 @@
 # these values into the shared workflow defined in the central config repo.
 # This is where this repo determines its own pipeline parameters.
 parameters:
+  # Passed into the (non-overridable) shared URL orb job.
   test: "pass me"
+  # Passed into the overridable second-job (base or override, whichever runs).
+  second_message: "second value from the working repo"
