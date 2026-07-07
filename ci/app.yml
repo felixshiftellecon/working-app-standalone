@@ -1,0 +1,13 @@
+version: 2.1
+
+# Consumer that customizes PARAMETERS but does NOT override any job.
+# There is no `jobs:` section, so the setup job leaves the override target on the
+# shared orb (which has no second-job) and override-with falls back to the
+# central base second-job -- run here with THIS repo's parameter values.
+parameters:
+  test:
+    type: string
+    default: "params-only: hello from the consumer"
+  second_message:
+    type: string
+    default: "params-only: my second message"
