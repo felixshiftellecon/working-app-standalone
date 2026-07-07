@@ -66,6 +66,32 @@ jobs:                       # (2) this repo's OVERRIDE of the central second-job
 
 ---
 
+## One central config, many consumers (this is the important part)
+
+The central repo is shared by **every** working repo. The setup job runs the
+same for all of them and derives behaviour per-repo from `ci/app.yml`, so
+`ci/app.yml` is **entirely optional** and **the default mode is "no override".**
+A consumer can change parameters with or without overriding a job:
+
+| Consumer has… | Parameters | `second-job` that runs |
+|---|---|---|
+| **no `ci/app.yml`** | central defaults | central **base** (no override) |
+| **`ci/app.yml` with `parameters:` only** | this repo's values | central **base** (no override) |
+| **`ci/app.yml` with `parameters:` + `jobs.second-job`** | this repo's values | this repo's **override** |
+
+Key point: **"no override" does not mean "no parameters".** A repo that only sets
+`parameters:` still customizes the pipeline; it just runs the standard central
+job. The setup job only routes `override-with` to a repo's file when that file
+actually defines `jobs:` — otherwise it points at the shared orb (which has no
+`second-job`), and `override-with` falls back to the central base job.
+
+> In this sandbox the three modes above are simulated as three branches of this
+> repo — `continuation` (override), `params-only` (params, no override), and
+> `no-override` (zero config) — all driven by the same central `continuation`
+> config.
+
+---
+
 ## End-to-end flow
 
 ```
@@ -95,7 +121,9 @@ jobs:                       # (2) this repo's OVERRIDE of the central second-job
  │   orbs:                                                              │
  │     central-orb  = central repo URL orb        (orbs/orb.yml)        │
  │     override-orb = << pipeline.parameters.override_orb_url >>        │
- │                    (defaults to THIS repo's ci/app.yml)             │
+ │                    (set per-repo by setup: this repo's ci/app.yml   │
+ │                     if it defines jobs, else the shared orb =        │
+ │                     no override -> base job runs)                   │
  │   workflow test-workflow:                                            │
  │     - central-orb/orb-job   job_param_1 = << test >>                 │
  │     - second-job            job_param_2 = << second_message >>       │
