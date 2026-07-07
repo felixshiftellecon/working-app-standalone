@@ -14,4 +14,4 @@ jobs:
         type: string
         default: "override default"
     steps:
-      - run: echo "OVERRIDE (working repo) second-job: << parameters.job_param_2 >>"
+      - run: 'echo "OVERRIDE (working repo) second-job: << parameters.job_param_2 >>"'
