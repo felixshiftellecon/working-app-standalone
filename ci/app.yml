@@ -2,31 +2,37 @@ version: 2.1
 
 # Single per-repo customization file. It plays two roles at once:
 #
-#   1. Parameter source. The `parameters` block below declares this repo's
-#      pipeline parameters and their values. The central setup job reads the
-#      defaults from this file and injects them into the shared workflow.
+#   1. Parameter source. The `parameters` block declares this repo's pipeline
+#      parameters and their values. The central setup job reads the defaults and
+#      injects them into the shared workflow.
 #
 #   2. Override orb. This file is also a URL orb (a jobs-only definition). The
-#      central config references it with `override-with: override-orb/second-job`,
-#      so defining `second-job` here replaces the central default. Omit it to use
-#      the central default instead.
+#      central config overrides its second job with `override-with:
+#      override-orb/<< override_job >>`, so the job named by `override_job` here
+#      replaces the central default. Give it a name distinct from the central
+#      "second-job" so it is obvious in the CircleCI UI which job ran.
 #
-# Because CircleCI fetches this file for the override via the org URL-orb
-# allow-list (which supports GitHub App auth) and the central setup job reads it
-# from an authenticated checkout, nothing here depends on the repo being public.
+# Nothing here depends on the repo being public: the override orb is fetched via
+# the org URL-orb allow-list (GitHub App auth) and the setup job reads this file
+# from an authenticated checkout.
 
 parameters:
   # Passed into the (non-overridable) shared URL orb job.
   test:
     type: string
     default: "pass me"
-  # Passed into the overridable second-job (base or override, whichever runs).
+  # Passed into the overridable second job (base or override, whichever runs).
   second_message:
     type: string
     default: "second value from the working repo"
+  # Name of THIS repo's override job. Must match the job key below, and is shown
+  # as the job's name in the CircleCI UI (distinct from the central "second-job").
+  override_job:
+    type: string
+    default: "working-second-job"
 
 jobs:
-  second-job:
+  working-second-job:
     docker:
       - image: cimg/base:stable
     resource_class: small
@@ -35,4 +41,4 @@ jobs:
         type: string
         default: "override default"
     steps:
-      - run: 'echo "OVERRIDE (working repo) second-job: << parameters.job_param_2 >>"'
+      - run: 'echo "OVERRIDE (working repo) working-second-job: << parameters.job_param_2 >>"'
