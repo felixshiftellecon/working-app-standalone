@@ -44,9 +44,12 @@ parameters:                 # (1) this repo's parameter VALUES
   second_message:
     type: string
     default: "second value from the working repo"
+  override_job:               # name of THIS repo's override job (see below)
+    type: string
+    default: "working-second-job"
 
-jobs:                       # (2) OPTIONAL override of the central second-job
-  second-job:
+jobs:                         # (2) OPTIONAL override of the central second job
+  working-second-job:
     docker:
       - image: cimg/base:stable
     resource_class: small
@@ -55,16 +58,18 @@ jobs:                       # (2) OPTIONAL override of the central second-job
         type: string
         default: "override default"
     steps:
-      - run: 'echo "OVERRIDE (working repo) second-job: << parameters.job_param_2 >>"'
+      - run: 'echo "OVERRIDE (working repo) working-second-job: << parameters.job_param_2 >>"'
 ```
 
 - The `parameters:` block is read by the central setup job (it takes each
   parameter's `default`) and injected into the shared workflow.
 - The `jobs:` block makes this file a **URL orb**. The central config uses
-  `override-with: override-orb/<< pipeline.parameters.override_job >>`, so a job
-  defined here replaces the central default. The override job name is itself a
-  parameter (`override_job`, default `second-job`) — name your override job
-  whatever you like and set `override_job` to match.
+  `override-with: override-orb/<< pipeline.parameters.override_job >>` and shows
+  that name in the UI (`name: << pipeline.parameters.override_job >>`), so a job
+  defined here replaces the central default. **Name your override job distinctly
+  from the central `second-job`** (e.g. `working-second-job`) and set
+  `override_job` to match — that way the CircleCI UI clearly shows which job ran:
+  your override name when overriding, or `second-job` for the central default.
 
 ---
 
@@ -123,13 +128,16 @@ job) and `override-with` falls back to the central base job.
  │                     no override -> base job)                        │
  │   workflow test-workflow:                                            │
  │     - central-orb/orb-job   job_param_1 = << test >>                 │
- │     - second-job            job_param_2 = << second_message >>       │
- │                 override-with: override-orb/<< override_job >>       │
+ │     - second-job   name = << override_job >>  (shown in the UI)      │
+ │                    job_param_2 = << second_message >>                │
+ │                    override-with: override-orb/<< override_job >>    │
  └─────────────────────────────────────────────────────────────────────┘
 ```
 
-Two jobs run: `central-orb/orb-job` (standard, not overridable) and `second-job`
-(overridable per the table above).
+Two jobs run: `central-orb/orb-job` (standard, not overridable) and the second
+job (overridable per the table above). The second job's name in the UI is the
+resolved `override_job` — this repo's `working-second-job` when it overrides, or
+`second-job` for the central default — so it is obvious which one ran.
 
 ---
 
@@ -178,8 +186,9 @@ circleci workflow get <workflow-id>
 circleci job output list <job-id>
 ```
 
-`second-job`'s output reading `OVERRIDE (working repo) …` proves this repo's job
-replaced the central default and its parameter flowed through.
+Seeing a job named `working-second-job` (not `second-job`) whose output reads
+`OVERRIDE (working repo) …` proves this repo's job replaced the central default
+and its parameter flowed through.
 
 ---
 
