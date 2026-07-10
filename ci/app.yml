@@ -1,0 +1,10 @@
+version: 2.1
+
+# Parameters only, no job override. This branch exists to exercise the shared
+# central-orb job so we can show its behaviour is controlled by the sha that
+# central_orb_ref points at in the central repo. The value below just makes this
+# run identifiable in the orb-job log line.
+parameters:
+  test:
+    type: string
+    default: "sha-orb-demo run"
