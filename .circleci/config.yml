@@ -1,0 +1,76 @@
+version: 2.1
+
+setup: true
+
+# Setup pipeline: read .circleci/modules.yml, work out which modules changed,
+# and render the central continuation template into a per-module config.
+# The generator and the template both live in the central config repo.
+
+orbs:
+  continuation: circleci/continuation@1
+
+parameters:
+  config-commit:
+    description: Branch or commit SHA of the central config repo to source the generator and template from.
+    type: string
+    default: "module-override-demo"
+
+jobs:
+  generate-config:
+    docker:
+      - image: cimg/python:3.12
+    resource_class: small
+    environment:
+      CENTRAL_REPO: felixshiftellecon/central-config-circleci
+    steps:
+      - checkout
+      - run:
+          name: Install Python dependencies
+          command: pip install --quiet pyyaml
+      - run:
+          name: Fetch generate-config.py from the central config repo
+          command: |
+            curl -fsSL \
+              "https://raw.githubusercontent.com/${CENTRAL_REPO}/<< pipeline.parameters.config-commit >>/config-templates/monorepo/generate-config.py" \
+              -o generate-config.py
+      - run:
+          name: Determine base revision
+          command: |
+            DEFAULT_BRANCH=$(git remote show origin | awk '/HEAD branch/ {print $NF}')
+            if [ -z "$DEFAULT_BRANCH" ]; then
+              echo "ERROR: could not detect the default branch from origin." >&2
+              exit 1
+            fi
+            echo "Detected default branch: ${DEFAULT_BRANCH}"
+            if [ "$CIRCLE_BRANCH" = "$DEFAULT_BRANCH" ]; then
+              echo "export BASE_REVISION=HEAD~1" >> "$BASH_ENV"
+            else
+              git fetch origin "$DEFAULT_BRANCH"
+              MERGE_BASE=$(git merge-base "origin/${DEFAULT_BRANCH}" HEAD)
+              echo "Diffing against merge-base: ${MERGE_BASE}"
+              echo "export BASE_REVISION=${MERGE_BASE}" >> "$BASH_ENV"
+            fi
+      - run:
+          name: Generate CircleCI config
+          command: |
+            source "$BASH_ENV"
+            python generate-config.py \
+              --modules .circleci/modules.yml \
+              --app-config .circleci/app-config.yml \
+              --override-url "https://raw.githubusercontent.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/${CIRCLE_SHA1}/.circleci/app-config.yml" \
+              --template-url "https://raw.githubusercontent.com/${CENTRAL_REPO}/<< pipeline.parameters.config-commit >>/config-templates/monorepo/build-test-monorepo-continued.yml" \
+              --config-commit "<< pipeline.parameters.config-commit >>" \
+              --base "${BASE_REVISION}" \
+              --head "${CIRCLE_SHA1}" \
+              | tee /tmp/generated-config.yml
+      - store_artifacts:
+          path: /tmp/generated-config.yml
+          destination: generated-config.yml
+      - continuation/continue:
+          configuration_path: /tmp/generated-config.yml
+          parameters: '{}'
+
+workflows:
+  setup:
+    jobs:
+      - generate-config

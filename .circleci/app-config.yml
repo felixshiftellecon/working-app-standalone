@@ -1,0 +1,33 @@
+version: 2.1
+
+# Jobs-only URL orb. No orbs:, no workflows:. Referenced by the generated config
+# as `app-config/<job>` via override-with, and only for the modules that ask for
+# it in modules.yml.
+#
+# An override job MUST declare every parameter the central call site passes --
+# args are validated against the override, not against the job it replaces.
+
+jobs:
+  alpha-test:
+    parameters:
+      app-dir:
+        type: string
+        default: "."
+      python-version:
+        type: string
+        default: "3.12"
+      checkout-submodules:
+        type: boolean
+        default: false
+    docker:
+      - image: cimg/python:<< parameters.python-version >>
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Run tests (overridden)
+          command: |
+            echo "OVERRIDE test job -- module << parameters.app-dir >>"
+            echo "this module needed a bigger box and an extra step"
+            cd << parameters.app-dir >>
+            cat VERSION

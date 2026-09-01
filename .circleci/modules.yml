@@ -1,0 +1,21 @@
+# Per-repo module map read by the central generator.
+paths-for-all-modules:
+  - .circleci
+
+modules:
+  # Overrides ONLY its test job. Its build job still comes from the central template.
+  - app-dir: services/alpha
+    python-version: "3.12"
+    image-repository: demo/alpha
+    overrides:
+      test: alpha-test
+
+  # No overrides -- both jobs come from the central template.
+  - app-dir: services/beta
+    python-version: "3.11"
+    image-repository: demo/beta
+
+  # Library module: no image jobs, no overrides.
+  - app-dir: libs/shared
+    python-version: "3.12"
+    build-image: false
