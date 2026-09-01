@@ -21,7 +21,7 @@ jobs:
         default: false
     docker:
       - image: cimg/python:<< parameters.python-version >>
-    resource_class: medium
+    resource_class: large
     steps:
       - checkout
       - run:
@@ -29,5 +29,6 @@ jobs:
           command: |
             echo "OVERRIDE test job -- module << parameters.app-dir >>"
             echo "this module needed a bigger box and an extra step"
+            echo "cpus=$(nproc)"
             cd << parameters.app-dir >>
             cat VERSION
